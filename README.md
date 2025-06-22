@@ -83,9 +83,11 @@
 
 
 ## 项目结构
+
+```text
 .
-├── dist/ # 应用打包输出目录
-├── src/ # 源代码目录
+├── dist/             # 应用打包输出目录
+├── src/              # 源代码目录
 │ ├── components/ # Vue 组件
 │ ├── services/ # 核心服务 (下载、转换、存储)
 │ ├── store/ # Pinia 状态管理
@@ -96,6 +98,7 @@
 ├── preload.js # Electron 预加载脚本
 ├── package.json # 项目元数据和依赖
 └── vite.config.js # Vite 配置文件
+```
 
 ## 贡献
 
