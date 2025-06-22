@@ -119,3 +119,23 @@ dist-electron
 
 # Vitest browser coverage report
 coverage.json.vitest 
+# Build outputs
+dist/
+dist-vue/
+dist-electron/
+
+# Dependencies
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
