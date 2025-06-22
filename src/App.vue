@@ -1,7 +1,13 @@
 <template>
   <div class="common-layout">
     <el-container>
-      <div id="split-container" class="split-container">
+      <!-- 阅读模式 -->
+      <div v-if="store.isReading" class="reading-mode-container">
+        <ArticleReader />
+      </div>
+
+      <!-- 常规模式 -->
+      <div v-else id="split-container" class="split-container">
         <div id="category-panel" class="split-item">
           <CategoryTree />
         </div>
@@ -17,20 +23,42 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, watch, nextTick } from 'vue';
+import { useArticleStore } from './store';
 import Split from 'split.js';
 import CategoryTree from './components/CategoryTree.vue';
 import ArticleList from './components/ArticleList.vue';
 import ArticleReader from './components/ArticleReader.vue';
 
-onMounted(() => {
-  Split(['#category-panel', '#list-panel', '#reader-panel'], {
-    sizes: [20, 30, 50], // 初始宽度比例
-    minSize: [200, 300, 400], // 最小宽度
-    gutterSize: 8,
-    cursor: 'col-resize',
+const store = useArticleStore();
+let splitInstance = null;
+
+const initializeSplit = () => {
+  if (splitInstance) {
+    splitInstance.destroy();
+  }
+  // 使用 nextTick 确保 DOM 更新完毕
+  nextTick(() => {
+    splitInstance = Split(['#category-panel', '#list-panel', '#reader-panel'], {
+      sizes: [20, 30, 50],
+      minSize: [200, 300, 400],
+      gutterSize: 8,
+      cursor: 'col-resize',
+    });
   });
-});
+};
+
+watch(() => store.isReading, (isReading) => {
+  if (!isReading) {
+    initializeSplit();
+  } else {
+    if (splitInstance) {
+      splitInstance.destroy();
+      splitInstance = null;
+    }
+  }
+}, { immediate: true }); // immediate确保初始状态也执行
+
 </script>
 
 <style>
@@ -71,5 +99,10 @@ html, body, #app, .common-layout, .el-container {
 .gutter.gutter-horizontal {
   cursor: col-resize;
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+}
+
+.reading-mode-container {
+  width: 100%;
+  height: 100%;
 }
 </style>

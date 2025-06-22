@@ -165,21 +165,13 @@ const handleDelete = async (article) => {
   }
 };
 
-const handleView = async (article) => {
-  store.setLoading(true);
+const handleRowClick = async (row) => {
   try {
-    const content = await readArticleContent(article.filePath);
-    store.setArticle({ 
-      title: article.title, 
-      content: content,
-      url: article.url,
-    });
+    const content = await readArticleContent(row.filePath);
+    store.setSelectedArticle({ ...row, content });
+    store.setReadingMode(true); // 进入阅读模式
   } catch (error) {
-    ElMessage.error('读取文章内容失败');
-    console.error(error);
-    store.clearArticle();
-  } finally {
-    store.setLoading(false);
+    ElMessage.error('加载文章内容失败');
   }
 };
 </script>

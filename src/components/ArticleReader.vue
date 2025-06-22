@@ -1,16 +1,15 @@
 <template>
-  <div class="reader-container" v-loading="store.isLoading">
-    <div v-if="renderedContent" class="article-content">
-      <h1 class="article-title">
-        <span>{{ store.currentArticleTitle }}</span>
-        <a v-if="store.currentArticleUrl" :href="store.currentArticleUrl" target="_blank" title="查看原文">
-          <el-icon><Link /></el-icon>
-        </a>
-      </h1>
-      <div ref="contentContainer" v-html="renderedContent"></div>
+  <div class="article-reader">
+    <div v-if="store.selectedArticle">
+      <div class="reader-toolbar">
+        <el-button @click="exitReadingMode" :icon="ArrowLeftBold" circle />
+        <h1 class="reader-title">{{ store.selectedArticle.title }}</h1>
+        <a :href="store.selectedArticle.url" target="_blank" class="source-link">查看原文</a>
+      </div>
+      <div class="reader-content" ref="contentContainer" v-html="renderedMarkdown"></div>
     </div>
-    <div v-else class="placeholder">
-      <p>从左侧列表选择一篇文章开始阅读</p>
+    <div v-else class="empty-state">
+      <p>从左侧选择一篇文章开始阅读</p>
     </div>
   </div>
 </template>
@@ -19,23 +18,27 @@
 import { computed, ref, watch, nextTick } from 'vue';
 import { useArticleStore } from '../store.js';
 import { marked } from 'marked';
-import { Link } from '@element-plus/icons-vue';
+import { Link, ArrowLeftBold } from '@element-plus/icons-vue';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // 引入 GitHub 风格的代码高亮样式
 
 const store = useArticleStore();
 const contentContainer = ref(null);
 
-const renderedContent = computed(() => {
-  if (store.currentArticleContent) {
-    // 仅使用 marked 进行基础转换
-    return marked.parse(store.currentArticleContent);
+const exitReadingMode = () => {
+  store.setReadingMode(false);
+  store.setSelectedArticle(null);
+};
+
+const renderedMarkdown = computed(() => {
+  if (store.selectedArticle && store.selectedArticle.content) {
+    return marked(store.selectedArticle.content);
   }
   return '';
 });
 
 // 监听内容变化，手动触发高亮
-watch(renderedContent, async () => {
+watch(renderedMarkdown, async () => {
   // 等待 v-html 将内容渲染到DOM上
   await nextTick();
 
@@ -50,6 +53,22 @@ watch(renderedContent, async () => {
 </script>
 
 <style scoped>
+/* Remove the v-if from the root element, so .article-reader is always present */
+.article-reader {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the content area fills the available space */
+.reader-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
 .reader-container {
   height: 100%;
   overflow-y: auto;
@@ -103,5 +122,24 @@ watch(renderedContent, async () => {
 
 :deep(code) {
   font-family: 'Courier New', Courier, monospace;
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e4e7ed;
+  padding-bottom: 15px;
+}
+
+.reader-title {
+  font-size: 24px;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.source-link {
+  font-size: 14px;
 }
 </style>

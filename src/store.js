@@ -15,6 +15,7 @@ export const useArticleStore = defineStore('article', {
     // 加载状态
     isLoading: false,
     selectedArticle: null,
+    isReading: false,
   }),
   actions: {
     setArticle(article) {
@@ -38,6 +39,9 @@ export const useArticleStore = defineStore('article', {
     },
     setLoading(status) {
       this.isLoading = status;
+    },
+    setReadingMode(status) {
+      this.isReading = status;
     }
   },
 }); 
