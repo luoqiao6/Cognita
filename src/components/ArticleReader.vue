@@ -32,6 +32,7 @@ const readerStyle = computed(() => ({
   '--reader-color': settingsStore.readerSettings.color,
   '--reader-font-size': `${settingsStore.readerSettings.fontSize}px`,
   '--reader-font-family': settingsStore.readerSettings.fontFamily,
+  '--reader-code-bg': settingsStore.readerSettings.codeBlockBackground,
 }));
 
 const exitReadingMode = () => {
@@ -185,15 +186,15 @@ watch(renderedMarkdown, async () => {
   opacity: 0.8;
 }
 
-/* Container for the code block */
+/* Container for the code block with a new semi-transparent background */
 :deep(.reader-content pre) {
-  background-color: transparent !important; /* Fallback for safety */
+  background-color: var(--reader-code-bg) !important;
   padding: 1em;
   border-radius: 6px;
-  border: 1px solid rgba(128, 128, 128, 0.2);
+  border: 1px solid rgba(128, 128, 128, 0.1);
 }
 
-/* Specifically target the inner code element styled by highlight.js */
+/* Ensure the inner code element is transparent to avoid color stacking */
 :deep(.reader-content pre code.hljs) {
   background-color: transparent !important;
 }

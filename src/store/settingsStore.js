@@ -11,12 +11,12 @@ const fontFamilies = [
   { name: '思源黑体', value: `'Noto Sans SC', sans-serif` },
 ];
 
-// 预设主题
+// 预设主题，现在包含代码块背景色
 const readerThemes = {
-  default: { name: '默认', background: '#FFFFFF', color: '#303133' },
-  sepia: { name: '黄昏', background: '#FBF0D9', color: '#5B4636' },
-  night: { name: '夜间', background: '#1D1D1D', color: '#A9A9A9' },
-  green: { name: '护眼', background: '#C7EDCC', color: '#222C24' },
+  default: { name: '默认', background: '#FFFFFF', color: '#303133', codeBlockBackground: '#0000001f' },
+  sepia: { name: '黄昏', background: '#FBF0D9', color: '#5B4636', codeBlockBackground: 'rgba(91, 70, 54, 0.1)' },
+  night: { name: '夜间', background: '#1D1D1D', color: '#A9A9A9', codeBlockBackground: 'rgba(255, 255, 255, 0.1)' },
+  green: { name: '护眼', background: '#C7EDCC', color: '#222C24', codeBlockBackground: 'rgba(34, 44, 36, 0.15)' },
 };
 
 
@@ -34,7 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
       readerSettings: {
         fontSize: 16,
         fontFamily: fontFamilies[0].value,
-        ...readerThemes.default, // background, color
+        ...readerThemes.default, // background, color, and codeBlockBackground
       },
     };
   };
@@ -67,7 +67,8 @@ export const useSettingsStore = defineStore('settings', () => {
     if (theme) {
       readerSettings.background = theme.background;
       readerSettings.color = theme.color;
-      activeReaderTheme.value = themeName; // 激活预设主题
+      readerSettings.codeBlockBackground = theme.codeBlockBackground; // 设置代码块背景
+      activeReaderTheme.value = themeName;
     }
   };
 
@@ -78,6 +79,11 @@ export const useSettingsStore = defineStore('settings', () => {
       readerSettings.color = color;
     }
     activeReaderTheme.value = 'custom'; // 切换到自定义主题
+  };
+
+  const setReaderCodeBlockBg = (color) => {
+    readerSettings.codeBlockBackground = color;
+    activeReaderTheme.value = 'custom'; // 自定义代码块背景也属于自定义主题
   };
 
   // --- Persistence ---
@@ -108,5 +114,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setReaderFontFamily,
     setReaderTheme,
     setReaderCustomColor,
+    setReaderCodeBlockBg,
   };
 }); 

@@ -75,6 +75,15 @@
         />
       </div>
 
+      <div class="setting-item color-picker-item">
+        <span class="label">代码块背景</span>
+        <el-color-picker
+          :model-value="settingsStore.readerSettings.codeBlockBackground"
+          @active-change="(color) => settingsStore.setReaderCodeBlockBg(color)"
+          show-alpha
+        />
+      </div>
+
     </div>
   </el-drawer>
 </template>
