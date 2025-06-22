@@ -184,4 +184,17 @@ watch(renderedMarkdown, async () => {
   color: var(--reader-color); /* Use variable instead of inherit */
   opacity: 0.8;
 }
+
+/* Container for the code block */
+:deep(.reader-content pre) {
+  background-color: transparent !important; /* Fallback for safety */
+  padding: 1em;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+/* Specifically target the inner code element styled by highlight.js */
+:deep(.reader-content pre code.hljs) {
+  background-color: transparent !important;
+}
 </style>
