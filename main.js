@@ -45,6 +45,42 @@ db.exec(`
   )
 `);
 
+// 创建用于全文搜索的虚拟表 (FTS5)
+// 我们将只索引 title 和 content，并且 content 会在添加文章时手动插入
+db.exec(`
+  CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
+    title,
+    content
+  )
+`);
+
+// --- 数据迁移：确保所有现有文章都在FTS表中 ---
+const transferMissingArticles = () => {
+  const stmt = db.prepare(`
+    SELECT id, title, filePath FROM articles
+    WHERE id NOT IN (SELECT rowid FROM articles_fts)
+  `);
+  const missingArticles = stmt.all();
+
+  if (missingArticles.length > 0) {
+    console.log(`发现 ${missingArticles.length} 篇缺失索引的文章，正在同步...`);
+    const insertStmt = db.prepare('INSERT INTO articles_fts (rowid, title, content) VALUES (?, ?, ?)');
+    for (const article of missingArticles) {
+      try {
+        if (fs.existsSync(article.filePath)) {
+          const content = fs.readFileSync(article.filePath, 'utf-8');
+          insertStmt.run(article.id, article.title, content);
+        }
+      } catch (error) {
+        console.error(`为文章 ${article.id} 同步FTS索引失败:`, error);
+      }
+    }
+    console.log('FTS索引同步完成。');
+  }
+};
+// 应用启动时执行一次
+transferMissingArticles();
+
 // 检查并插入默认分类
 try {
   const stmt = db.prepare("INSERT INTO categories (name) VALUES ('未分类')");
@@ -156,7 +192,13 @@ ipcMain.handle('add-article', (event, { title, url, filePath, categoryId }) => {
     }
     const stmt = db.prepare('INSERT INTO articles (title, url, filePath, categoryId) VALUES (?, ?, ?, ?)');
     const info = stmt.run(title, url, filePath, finalCategoryId);
-    return { success: true, id: info.lastInsertRowid };
+    const articleId = info.lastInsertRowid;
+
+    // 读取刚保存的文件内容并更新 FTS 表
+    const content = fs.readFileSync(filePath, 'utf-8');
+    db.prepare('INSERT INTO articles_fts (rowid, title, content) VALUES (?, ?, ?)').run(articleId, title, content);
+
+    return { success: true, id: articleId };
   } catch (error) {
     console.error('Failed to add article:', error);
     return { success: false, error: 'Failed to add article to database.' };
@@ -199,7 +241,10 @@ ipcMain.handle('delete-article', (event, id) => {
       }
     }
 
-    // 4. 从数据库删除记录
+    // 从 FTS 表删除记录
+    db.prepare('DELETE FROM articles_fts WHERE rowid = ?').run(id);
+
+    // 从数据库删除记录
     const deleteStmt = db.prepare('DELETE FROM articles WHERE id = ?');
     const info = deleteStmt.run(id);
 
@@ -211,6 +256,29 @@ ipcMain.handle('delete-article', (event, id) => {
   } catch(e) {
     console.error('Failed to delete article:', e);
     return { success: false, error: 'Failed to delete article.' };
+  }
+});
+
+// 搜索文章
+ipcMain.handle('search-articles', (event, searchTerm) => {
+  if (!searchTerm) {
+    // 如果搜索词为空，则返回所有文章
+    return ipcMain.handlers.get('get-articles')[0](event, null);
+  }
+  try {
+    const query = `
+      SELECT a.id, a.title, a.url, a.filePath, a.createdAt, c.name as categoryName
+      FROM articles a
+      JOIN articles_fts fts ON a.id = fts.rowid
+      LEFT JOIN categories c ON a.categoryId = c.id
+      WHERE articles_fts MATCH ?
+      ORDER BY rank
+    `;
+    const results = db.prepare(query).all(searchTerm);
+    return { success: true, data: results };
+  } catch (error) {
+    console.error('Failed to search articles:', error);
+    return { success: false, error: 'Failed to search articles.' };
   }
 });
 

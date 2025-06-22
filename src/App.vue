@@ -1,51 +1,75 @@
 <template>
   <div class="common-layout">
     <el-container>
-      <el-header>知识管理助手</el-header>
-      <el-container class="main-container">
-        <el-aside width="250px">
+      <div id="split-container" class="split-container">
+        <div id="category-panel" class="split-item">
           <CategoryTree />
-        </el-aside>
-        <el-main>
+        </div>
+        <div id="list-panel" class="split-item">
           <ArticleList />
-        </el-main>
-        <el-aside width="60%">
+        </div>
+        <div id="reader-panel" class="split-item">
           <ArticleReader />
-        </el-aside>
-      </el-container>
+        </div>
+      </div>
     </el-container>
   </div>
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
+import Split from 'split.js';
 import CategoryTree from './components/CategoryTree.vue';
 import ArticleList from './components/ArticleList.vue';
 import ArticleReader from './components/ArticleReader.vue';
+
+onMounted(() => {
+  Split(['#category-panel', '#list-panel', '#reader-panel'], {
+    sizes: [20, 30, 50], // 初始宽度比例
+    minSize: [200, 300, 400], // 最小宽度
+    gutterSize: 8,
+    cursor: 'col-resize',
+  });
+});
 </script>
 
 <style>
 html, body, #app, .common-layout, .el-container {
   height: 100%;
   margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止出现不必要的滚动条 */
 }
-.main-container {
-  height: calc(100% - 60px);
-}
-.el-header {
-  background-color: #B3C0D1;
-  color: #333;
-  text-align: center;
-  line-height: 60px;
-}
-.el-aside {
-  background-color: #D3DCE6;
-  color: #333;
+
+.split-container {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
   height: 100%;
 }
-.el-main {
-  background-color: #E9EEF3;
-  color: #333;
-  padding: 20px;
-  height: 100%;
+
+.split-item {
+  padding: 0; /* 改为0，由内部组件控制 */
+  box-sizing: border-box;
+  overflow-y: auto; /* 让每个面板内容超出时可以独立滚动 */
+}
+
+#category-panel {
+  border-right: 1px solid #dcdfe6;
+}
+#list-panel {
+  border-right: 1px solid #dcdfe6;
+}
+
+.gutter {
+  background-color: #f7f7f7;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  z-index: 10;
+}
+
+.gutter.gutter-horizontal {
+  cursor: col-resize;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
 }
 </style>

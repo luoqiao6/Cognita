@@ -69,6 +69,15 @@ export async function deleteArticle(id) {
   }
 }
 
+export async function searchArticles(term) {
+  const result = await window.electronAPI.searchArticles(term);
+  if (result.success) {
+    return result.data;
+  } else {
+    throw new Error(result.error);
+  }
+}
+
 // === 分类相关 ===
 
 export async function getCategories() {

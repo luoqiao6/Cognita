@@ -1,28 +1,46 @@
 <template>
-  <div>
-    <el-input v-model="url" placeholder="请输入文章URL" class="input-with-button">
-      <template #append>
-        <el-button @click="handleDownload" :loading="loading">下载</el-button>
-      </template>
-    </el-input>
-    
-    <el-table :data="articles" stripe style="width: 100%" row-key="id" v-loading="loading">
-      <el-table-column prop="title" label="标题">
-        <template #default="{ row }">
-          <div draggable="true" @dragstart="handleDragStart(row, $event)">
-            {{ row.title }}
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column prop="categoryName" label="分类" width="120" />
-      <el-table-column prop="createdAt" label="保存日期" width="180" />
-      <el-table-column label="操作" width="180">
-        <template #default="scope">
-          <el-button link type="primary" size="small" @click="handleView(scope.row)">查看</el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+  <div class="article-list-container">
+    <div class="toolbar">
+      <form @submit.prevent="handleDownloadSubmit" class="download-form">
+        <el-input
+          v-model="url"
+          placeholder="输入文章URL以下载，按回车键确认"
+          class="input-with-button"
+          clearable
+        >
+          <template #append>
+            <el-button :loading="loading" native-type="submit">下载</el-button>
+          </template>
+        </el-input>
+      </form>
+      <el-input
+        v-model="searchTerm"
+        placeholder="搜索标题和内容..."
+        class="search-input"
+        clearable
+        @input="handleSearch"
+      />
+    </div>
+    <div class="table-container">
+      <el-table :data="articles" stripe style="width: 100%" @row-click="handleRowClick" row-key="id" v-loading="loading">
+        <el-table-column prop="title" label="标题">
+          <template #default="{ row }">
+            <div draggable="true" @dragstart="handleDragStart(row, $event)">
+              {{ row.title }}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="categoryName" label="分类" width="120" />
+        <el-table-column prop="createdAt" label="创建时间" width="180" #default="{ row }">
+          {{ new Date(row.createdAt).toLocaleString() }}
+        </el-table-column>
+        <el-table-column label="操作" width="70">
+          <template #default="{ row }">
+            <el-button link type="danger" @click.stop="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </template>
 
@@ -33,12 +51,14 @@ import { useArticleStore } from '../store.js';
 import emitter from '../eventBus.js';
 import { fetchArticleHtml } from '../services/downloader.js';
 import { convertToMarkdown } from '../services/converter.js';
-import { saveArticle, getArticles, addArticleToDb, readArticleContent, deleteArticle, updateArticleCategory } from '../services/storage.js';
+import { saveArticle, getArticles, addArticleToDb, readArticleContent, deleteArticle, updateArticleCategory, searchArticles } from '../services/storage.js';
+import { debounce } from 'lodash-es';
 
 const store = useArticleStore();
 const url = ref('');
 const loading = ref(false);
 const articles = ref([]);
+const searchTerm = ref('');
 
 const fetchArticles = async (categoryId) => {
   loading.value = true;
@@ -52,8 +72,20 @@ const fetchArticles = async (categoryId) => {
   }
 };
 
+const handleSearch = debounce(async () => {
+  loading.value = true;
+  try {
+    articles.value = await searchArticles(searchTerm.value);
+  } catch (error) {
+    ElMessage.error('搜索失败');
+  } finally {
+    loading.value = false;
+  }
+}, 300); // 300ms 防抖
+
 const handleCategorySelected = (categoryId) => {
-  store.setSelectedCategory(categoryId); // 仍然更新store，以便下载时能获取
+  store.setSelectedCategory(categoryId);
+  searchTerm.value = ''; // 清空搜索框
   fetchArticles(categoryId);
 };
 
@@ -82,42 +114,25 @@ const handleDragStart = (article, event) => {
   event.dataTransfer.effectAllowed = 'move';
 };
 
-const handleDownload = async () => {
-  if (!url.value) {
+const handleDownloadSubmit = async () => {
+  if (!url.value.trim()) {
     ElMessage.warning('请输入URL');
     return;
   }
   loading.value = true;
-  const originalUrl = url.value;
-
   try {
-    const html = await fetchArticleHtml(originalUrl);
-    const { title, content } = await convertToMarkdown(html, originalUrl);
-    
-    const filePath = await saveArticle({ title, content });
-    
-    // 一步到位，直接在添加时就设置好分类
-    await addArticleToDb({ 
-      title, 
-      url: originalUrl, 
-      filePath, 
-      categoryId: store.selectedCategoryId 
-    });
-
-    // 刷新当前列表
-    await fetchArticles(store.selectedCategoryId);
-
-    ElMessage.success(`文章《${title}》已成功保存！`);
-    
-    // 下载后自动查看
-    handleView({ title, url: originalUrl, filePath });
-
+    const html = await fetchArticleHtml(url.value);
+    const { title, content } = await convertToMarkdown(html, url.value);
+    const filePath = await saveArticle({ title, content: content });
+    await addArticleToDb({ title, url: url.value, filePath, categoryId: store.selectedCategoryId });
+    ElMessage.success('下载并保存成功！');
+    url.value = '';
+    // 刷新当前分类的文章列表
+    fetchArticles(store.selectedCategoryId); 
   } catch (error) {
-    console.error(error);
-    ElMessage.error(error.message || '处理失败');
+    ElMessage.error(error.message || '处理文章失败');
   } finally {
     loading.value = false;
-    url.value = ''; // 清空输入框
   }
 };
 
@@ -170,8 +185,30 @@ const handleView = async (article) => {
 </script>
 
 <style scoped>
-.input-with-button {
-  margin-bottom: 20px;
+.article-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #fff;
+}
+.toolbar {
+  flex-shrink: 0;
+  padding: 15px;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.download-form {
+  width: 100%;
+}
+.search-input {
+  width: 100%;
+  max-width: 400px;
+}
+.table-container {
+  flex-grow: 1;
+  overflow-y: auto;
 }
 .draggable-title {
   cursor: move;

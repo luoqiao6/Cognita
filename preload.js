@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addArticle: (articleData) => ipcRenderer.invoke('add-article', articleData),
   readArticleContent: (filePath) => ipcRenderer.invoke('read-article-content', filePath),
   deleteArticle: (id) => ipcRenderer.invoke('delete-article', id),
+  searchArticles: (term) => ipcRenderer.invoke('search-articles', term),
   // --- 分类API ---
   getCategories: () => ipcRenderer.invoke('get-categories'),
   addCategory: (name) => ipcRenderer.invoke('add-category', name),
