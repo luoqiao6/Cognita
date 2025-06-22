@@ -1,42 +1,58 @@
 {
-  "name": "test2",
+  "name": "cognita",
   "version": "1.0.0",
   "main": "main.js",
-  "directories": {
-    "doc": "doc"
-  },
+  "description": "A knowledge management system.",
+  "author": "Cognita Inc.",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
-    "build": "vite build",
-    "preview": "vite preview",
-    "rebuild": "electron-rebuild"
+    "build": "vite build && electron-builder",
+    "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "axios": "^1.10.0",
-    "better-sqlite3": "^12.0.0",
-    "cheerio": "^1.1.0",
-    "element-plus": "^2.10.2",
-    "express": "^5.1.0",
-    "highlight.js": "^11.11.1",
+    "better-sqlite3": "^11.1.2",
+    "cheerio": "^1.0.0-rc.12",
+    "cross-env": "^7.0.3",
+    "dayjs": "^1.11.12",
+    "element-plus": "^2.7.7",
+    "highlight.js": "^11.10.0",
     "lodash-es": "^4.17.21",
-    "marked": "^15.0.12",
+    "marked": "^13.0.2",
     "mitt": "^3.0.1",
-    "pinia": "^3.0.3",
+    "pinia": "^2.2.0",
     "split.js": "^1.6.5",
     "turndown": "^7.2.0",
-    "vue": "^3.5.17"
+    "vue": "^3.4.31"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.2.4",
-    "concurrently": "^9.1.2",
-    "cross-env": "^7.0.3",
-    "electron": "^36.5.0",
-    "electron-rebuild": "^3.2.9",
+    "@vitejs/plugin-vue": "^5.1.0",
+    "concurrently": "^8.2.2",
+    "electron": "^31.2.1",
+    "electron-builder": "^26.0.12",
     "vite": "^6.3.5",
     "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.cognita.app",
+    "productName": "Cognita",
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json",
+      "dist-vue/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "build/app.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/app.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    }
   }
 }
