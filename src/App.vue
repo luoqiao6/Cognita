@@ -2,7 +2,7 @@
   <div class="common-layout">
     <el-container>
       <!-- 阅读模式 -->
-      <div v-if="store.isReading" class="reading-mode-container">
+      <div v-if="articleStore.isReading" class="reading-mode-container">
         <ArticleReader />
       </div>
 
@@ -19,25 +19,28 @@
         </div>
       </div>
     </el-container>
+    <SettingsPanel />
   </div>
 </template>
 
 <script setup>
 import { onMounted, watch, nextTick } from 'vue';
-import { useArticleStore } from './store';
+import { useArticleStore } from './store/articleStore';
+import { useSettingsStore } from './store/settingsStore';
 import Split from 'split.js';
 import CategoryTree from './components/CategoryTree.vue';
 import ArticleList from './components/ArticleList.vue';
 import ArticleReader from './components/ArticleReader.vue';
+import SettingsPanel from './components/SettingsPanel.vue';
 
-const store = useArticleStore();
+const articleStore = useArticleStore();
+const settingsStore = useSettingsStore();
 let splitInstance = null;
 
 const initializeSplit = () => {
   if (splitInstance) {
     splitInstance.destroy();
   }
-  // 使用 nextTick 确保 DOM 更新完毕
   nextTick(() => {
     splitInstance = Split(['#category-panel', '#list-panel', '#reader-panel'], {
       sizes: [20, 30, 50],
@@ -48,17 +51,36 @@ const initializeSplit = () => {
   });
 };
 
-watch(() => store.isReading, (isReading) => {
+// 监听全局主题变化
+watch(() => settingsStore.globalTheme, (newTheme) => {
+  const html = document.documentElement;
+  if (newTheme === 'dark') {
+    html.classList.add('dark');
+  } else {
+    html.classList.remove('dark');
+  }
+}, { immediate: true });
+
+// onMounted 负责初始加载时的布局初始化
+onMounted(() => {
+  if (!articleStore.isReading) {
+    initializeSplit();
+  }
+});
+
+// watch 负责响应 isReading 状态的后续变化
+watch(() => articleStore.isReading, (isReading) => {
   if (!isReading) {
+    // 从阅读模式返回
     initializeSplit();
   } else {
+    // 进入阅读模式
     if (splitInstance) {
       splitInstance.destroy();
       splitInstance = null;
     }
   }
-}, { immediate: true }); // immediate确保初始状态也执行
-
+});
 </script>
 
 <style>
@@ -73,13 +95,15 @@ html, body, #app, .common-layout, .el-container {
   display: flex;
   flex-direction: row;
   width: 100%;
-  height: 100%;
+  height: 100vh;
 }
 
 .split-item {
   padding: 0; /* 改为0，由内部组件控制 */
   box-sizing: border-box;
   overflow-y: auto; /* 让每个面板内容超出时可以独立滚动 */
+  /* 使用 Element Plus 的背景色变量 */
+  background-color: var(--el-bg-color);
 }
 
 #category-panel {

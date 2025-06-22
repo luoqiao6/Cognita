@@ -47,7 +47,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { useArticleStore } from '../store.js';
+import { useArticleStore } from '../store/articleStore';
 import emitter from '../eventBus.js';
 import { fetchArticleHtml } from '../services/downloader.js';
 import { convertToMarkdown } from '../services/converter.js';
@@ -181,12 +181,12 @@ const handleRowClick = async (row) => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #fff;
+  background-color: var(--el-bg-color);
 }
 .toolbar {
   flex-shrink: 0;
   padding: 15px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color-light);
   display: flex;
   flex-direction: column;
   gap: 15px;

@@ -1,5 +1,14 @@
 <template>
   <div class="category-container">
+    <div class="category-header">
+      <h3>文章分类</h3>
+      <el-button 
+        :icon="Setting" 
+        circle 
+        @click="openSettings"
+      />
+    </div>
+    <el-input v-model="filterText" placeholder="筛选分类" clearable />
     <el-tree
       :data="treeData"
       :props="defaultProps"
@@ -47,14 +56,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import emitter from '../eventBus.js';
 import { getCategories, addCategory, renameCategory, deleteCategory, updateArticleCategory } from '../services/storage.js';
 import { ElMessageBox, ElMessage } from 'element-plus';
-import { MoreFilled } from '@element-plus/icons-vue';
+import { MoreFilled, Setting } from '@element-plus/icons-vue';
+import { useArticleStore } from '../store/articleStore';
+import { useSettingsStore } from '../store/settingsStore';
+
+const articleStore = useArticleStore();
+const settingsStore = useSettingsStore();
 
 const defaultProps = { children: 'children', label: 'name' };
 const categories = ref([]);
+const filterText = ref('');
 
 const treeData = computed(() => {
   return [
@@ -164,6 +179,11 @@ const handleDelete = async (data) => {
   }
 };
 
+const openSettings = () => {
+  articleStore.setupPreview();
+  settingsStore.toggleSettingsPanel(true);
+};
+
 onMounted(() => {
   fetchCategories();
 });
@@ -172,8 +192,17 @@ onMounted(() => {
 <style scoped>
 .category-container {
   padding: 10px;
-  background: #fcfcfc;
+  background-color: var(--el-bg-color);
   height: 100%;
+}
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.category-header h3 {
+  margin: 0;
 }
 .custom-tree-node {
   flex: 1;
@@ -185,7 +214,7 @@ onMounted(() => {
 }
 
 .drop-target {
-  background-color: #c6e2ff;
+  background-color: var(--el-color-primary-light-7);
   border-radius: 4px;
 }
 </style>
