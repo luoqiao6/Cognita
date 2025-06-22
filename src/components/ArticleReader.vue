@@ -1,13 +1,20 @@
 <template>
   <div class="article-reader" :style="readerStyle">
-    <div v-if="store.selectedArticle">
+    <el-button 
+      class="back-button" 
+      @click="exitReadingMode" 
+      :icon="ArrowLeftBold" 
+      circle 
+    />
+    
+    <div v-if="store.selectedArticle" class="content-wrapper">
       <div class="reader-toolbar">
-        <el-button @click="exitReadingMode" :icon="ArrowLeftBold" circle />
         <h1 class="reader-title">{{ store.selectedArticle.title }}</h1>
         <a :href="store.selectedArticle.url" target="_blank" class="source-link">查看原文</a>
       </div>
       <div class="reader-content" ref="contentContainer" v-html="renderedMarkdown"></div>
     </div>
+    
     <div v-else class="empty-state">
       <p>从左侧选择一篇文章开始阅读</p>
     </div>
@@ -63,24 +70,40 @@ watch(renderedMarkdown, async () => {
 </script>
 
 <style scoped>
-/* Remove the v-if from the root element, so .article-reader is always present */
 .article-reader {
-  padding: 20px 40px;
   height: 100%;
   overflow-y: auto;
   background-color: var(--reader-bg);
   color: var(--reader-color);
-  font-size: var(--reader-font-size);
   font-family: var(--reader-font-family);
   line-height: 1.8;
-  display: flex;
-  flex-direction: column;
+  position: relative; /* Needed for absolute positioning of children */
 }
 
-/* Ensure the content area fills the available space */
+.back-button {
+  position: fixed; /* Or absolute, fixed is often safer for this */
+  top: 20px;
+  left: 20px;
+  z-index: 20;
+}
+
+.content-wrapper {
+  padding: 20px 60px; /* Adjust padding to make space for the button */
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+  padding-bottom: 15px;
+}
+
 .reader-content {
   flex-grow: 1;
   overflow-y: auto;
+  padding: 0 40px 20px 40px;
 }
 
 .reader-container {
@@ -136,15 +159,6 @@ watch(renderedMarkdown, async () => {
 
 :deep(code) {
   font-family: 'Courier New', Courier, monospace;
-}
-
-.reader-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
-  padding-bottom: 15px;
 }
 
 .reader-title {
